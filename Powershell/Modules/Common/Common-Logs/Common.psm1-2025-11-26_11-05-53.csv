@@ -1,6 +1,0 @@
-Timestamp,Level,Context,Message
-"2025-11-26 11:05:53.679","INFO","Ensure-Modules","Checking required modules: ActiveDirectory, ExchangeOnlineManagement"
-"2025-11-26 11:05:53.684","INFO","Ensure-Modules","ScriptRoot: /Users/varunaggarwal/Documents/Code/Powershell/Modules/Common | Local Modules folder present: False"
-"2025-11-26 11:05:53.743","INFO","Ensure-Modules","Imported available module: ExchangeOnlineManagement"
-"2025-11-26 11:05:53.744","WARN","Ensure-Modules","Missing modules after import attempts: ActiveDirectory"
-"2025-11-26 11:05:53.807","INFO","Ensure-Modules","Installing module 'ActiveDirectory' (Scope=CurrentUser)"

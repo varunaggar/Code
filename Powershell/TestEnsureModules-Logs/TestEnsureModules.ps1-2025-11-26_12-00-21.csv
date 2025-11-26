@@ -1,5 +1,0 @@
-Timestamp,Level,Context,Message
-"2025-11-26 12:00:21.608","INFO","Ensure-Modules","Checking required modules: Foo"
-"2025-11-26 12:00:21.614","INFO","Ensure-Modules","Local module search roots: /Users/varunaggarwal/Documents/Code/Powershell/Modules"
-"2025-11-26 12:00:21.627","INFO","Ensure-Modules","Imported local module: Foo from /Users/varunaggarwal/Documents/Code/Powershell/Modules/Foo/Foo.psd1"
-"2025-11-26 12:00:21.629","INFO","Ensure-Modules","All required modules loaded successfully."
