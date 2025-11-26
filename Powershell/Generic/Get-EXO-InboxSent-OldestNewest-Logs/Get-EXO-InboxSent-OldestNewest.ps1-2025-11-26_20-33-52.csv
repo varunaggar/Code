@@ -1,0 +1,8 @@
+Timestamp,Level,Context,Message
+"2025-11-26 20:33:52.235","INFO","Init","Loaded Common module from: /Users/varunaggarwal/Documents/Code/Powershell/Generic/../Modules/Common/Common.psm1"
+"2025-11-26 20:33:52.246","INFO","Ensure-Modules","Checking required modules: ExchangeOnlineManagement"
+"2025-11-26 20:33:52.247","INFO","Ensure-Modules","Local module search roots: /Users/varunaggarwal/Documents/Code/Powershell/Modules"
+"2025-11-26 20:33:52.289","INFO","Ensure-Modules","Imported available module: ExchangeOnlineManagement"
+"2025-11-26 20:33:52.291","INFO","Ensure-Modules","All required modules loaded successfully."
+"2025-11-26 20:33:52.292","INFO","Init","ExchangeOnlineManagement ensured/loaded."
+"2025-11-26 20:33:52.293","INFO","Connect","Connecting to Exchange Online…"

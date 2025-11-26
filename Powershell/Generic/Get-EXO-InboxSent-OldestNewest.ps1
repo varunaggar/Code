@@ -23,7 +23,8 @@ param(
   [string]$OutputCsv = './InboxSent-OldestNewest.csv',
   [string]$ProgressFile,
   [int]$ThrottleLimit = 16,
-  [switch]$DebugMode
+  [switch]$DebugMode,
+  [switch]$ShowProgress
 )
 
 Set-StrictMode -Version Latest
@@ -166,7 +167,7 @@ if (-not (Test-Path $OutputCsv)) {
 Write-Log -Level INFO -Message "Processing and streaming results to CSV…" -Context 'Output' -DebugMode:$DebugMode
 $total = [int]$remaining.Count
 $processedCount = 0
-Write-Progress -Activity 'Preparing processing' -Status "0/$total" -PercentComplete 0
+if ($ShowProgress) { Write-Progress -Activity 'Preparing processing' -Status "0/$total" -PercentComplete 0 }
 $remaining |
   ForEach-Object -Parallel {
     $id = $_
@@ -232,8 +233,12 @@ $remaining |
     Add-Content -Path $ProgressFile -Value "$($_.UserPrincipalName),Written"
     $processedCount++
     $pct = if ($total -gt 0) { [int](($processedCount / $total) * 100) } else { 100 }
-    Write-Progress -Activity 'Processing mailboxes' -Status "$processedCount/$total" -PercentComplete $pct
+    if ($ShowProgress) {
+      Write-Progress -Activity 'Processing mailboxes' -Status "$processedCount/$total" -PercentComplete $pct
+    } else {
+      Write-Log -Level INFO -Message "Processed $processedCount/$total ($pct%)" -Context 'Progress' -DebugMode:$DebugMode
+    }
   }
 
-Write-Progress -Activity 'Processing mailboxes' -Status "$processedCount/$total" -PercentComplete 100 -Completed
+if ($ShowProgress) { Write-Progress -Activity 'Processing mailboxes' -Status "$processedCount/$total" -PercentComplete 100 -Completed }
 Write-Log -Level INFO -Message 'Streaming complete.' -Context 'Output' -DebugMode:$DebugMode
