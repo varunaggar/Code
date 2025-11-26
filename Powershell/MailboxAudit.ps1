@@ -132,7 +132,8 @@ $worker = {
       $sentOld  = $sentRow.OldestItemReceivedDate
       $sentNew  = $sentRow.NewestItemReceivedDate
     } catch {
-      Write-FastLog -Level WARN -Message "Folder stats failed for $Email: $($_.Exception.Message)" -Context 'FolderStats'
+      $msg = "Folder stats failed for {0}: {1}" -f $Email, $_.Exception.Message
+      Write-FastLog -Level WARN -Message $msg -Context 'FolderStats'
     }
 
     return @{

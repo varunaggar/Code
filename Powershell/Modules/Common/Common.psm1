@@ -21,7 +21,7 @@ function Write-Log {
   )
   # Initialize default CSV log file once per session if none provided
   if (-not $LogPath) {
-    if (-not $Script:Common_LogPath) {
+    if (-not (Get-Variable -Name Common_LogPath -Scope Script -ErrorAction SilentlyContinue)) {
       $folders = Initialize-ScriptFolders -ScriptPath $PSCommandPath
       $scriptName = Split-Path -Leaf $PSCommandPath
       $tsFile = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'
@@ -190,7 +190,7 @@ function Initialize-ScriptFolders {
     if ($ScriptPath) { $ScriptName = Split-Path -Leaf $ScriptPath } elseif ($PSCommandPath) { $ScriptName = Split-Path -Leaf $PSCommandPath } else { throw 'Provide ScriptName or ScriptPath.' }
   }
   $baseName = [System.IO.Path]::GetFileNameWithoutExtension($ScriptName)
-  $scriptRoot = if ($ScriptPath) { Split-Path -Parent $ScriptPath } elseif ($PSScriptRoot) { $PSScriptRoot } elseif ($PSCommandPath) { Split-Path -Parent $PSCommandPath } else { Get-Location }.Path
+  $scriptRoot = if ($ScriptPath) { Split-Path -Parent $ScriptPath } elseif ($PSScriptRoot) { $PSScriptRoot } elseif ($PSCommandPath) { Split-Path -Parent $PSCommandPath } else { (Get-Location).Path }
   $outputDir = Join-Path $scriptRoot ("$baseName-Output")
   $logsDir   = Join-Path $scriptRoot ("$baseName-Logs")
   foreach ($dir in @($outputDir,$logsDir)) { if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir | Out-Null } }
@@ -214,7 +214,7 @@ function Start-FastLog {
   $enc = [System.Text.Encoding]::UTF8
   $Script:Common_FastLogWriter = [System.IO.StreamWriter]::new($LogPath, $true, $enc, $BufferSize)
   $Script:Common_FastLogWriter.AutoFlush = $false
-  if (-not $Script:Common_FastLogHeaderWritten) {
+  if (-not (Get-Variable -Name Common_FastLogHeaderWritten -Scope Script -ErrorAction SilentlyContinue)) {
     $Script:Common_FastLogWriter.WriteLine('Timestamp,Level,Context,Message')
     $Script:Common_FastLogHeaderWritten = $true
   }
