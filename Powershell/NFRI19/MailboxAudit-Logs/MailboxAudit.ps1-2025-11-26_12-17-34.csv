@@ -1,0 +1,5 @@
+Timestamp,Level,Context,Message
+"2025-11-26 12:17:34.605","INFO","Ensure-Modules","Checking required modules: ExchangeOnlineManagement"
+"2025-11-26 12:17:34.608","INFO","Ensure-Modules","Local module search roots: /Users/varunaggarwal/Documents/Code/Powershell/Modules; /Users/varunaggarwal/Documents/Code/Powershell/NFRI19/Modules"
+"2025-11-26 12:17:34.620","INFO","Ensure-Modules","Module already loaded: ExchangeOnlineManagement (3.4.0)"
+"2025-11-26 12:17:34.621","INFO","Ensure-Modules","All required modules loaded successfully."
