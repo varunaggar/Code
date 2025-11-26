@@ -164,6 +164,9 @@ if (-not (Test-Path $OutputCsv)) {
 }
 
 Write-Log -Level INFO -Message "Processing and streaming results to CSV…" -Context 'Output' -DebugMode:$DebugMode
+$total = [int]$remaining.Count
+$processedCount = 0
+Write-Progress -Activity 'Preparing processing' -Status "0/$total" -PercentComplete 0
 $remaining |
   ForEach-Object -Parallel {
     $id = $_
@@ -227,6 +230,10 @@ $remaining |
     $_ | Select-Object UserPrincipalName,InboxItems,InboxOldestReceived,InboxNewestReceived,SentItemsItems,SentItemsOldestSent,SentItemsNewestSent |
       Export-Csv -Path $OutputCsv -NoTypeInformation -Encoding UTF8 -Append
     Add-Content -Path $ProgressFile -Value "$($_.UserPrincipalName),Written"
+    $processedCount++
+    $pct = if ($total -gt 0) { [int](($processedCount / $total) * 100) } else { 100 }
+    Write-Progress -Activity 'Processing mailboxes' -Status "$processedCount/$total" -PercentComplete $pct
   }
 
+Write-Progress -Activity 'Processing mailboxes' -Status "$processedCount/$total" -PercentComplete 100 -Completed
 Write-Log -Level INFO -Message 'Streaming complete.' -Context 'Output' -DebugMode:$DebugMode
