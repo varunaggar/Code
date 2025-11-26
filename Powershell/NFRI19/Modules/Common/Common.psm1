@@ -8,89 +8,108 @@ function Get-Timestamp {
 function Ensure-Directory {
   param([Parameter(Mandatory)][string]$Path)
   if (-not (Test-Path $Path)) { New-Item -ItemType Directory -Path $Path | Out-Null }
-  return (Resolve-Path $Path).Path
-}
-
-function Get-CallerScriptPath {
-  param()
-  try {
-    $modulePath = $PSCommandPath
-    $moduleResolved = $null
-    if ($modulePath -and (Test-Path $modulePath)) { $moduleResolved = (Resolve-Path $modulePath -ErrorAction SilentlyContinue).Path }
-    $frames = @(Get-PSCallStack)
-    foreach ($f in $frames) {
-      $p = $f.ScriptName
-      if ([string]::IsNullOrWhiteSpace($p)) { continue }
-      if (-not (Test-Path $p)) { continue }
-      $resolved = (Resolve-Path $p -ErrorAction SilentlyContinue).Path
-      if ($moduleResolved -and $resolved -eq $moduleResolved) { continue }
-      return $resolved
+  function Ensure-Modules {
+    param(
+      [Parameter(Mandatory)][string[]]$ModuleNames,
+      [switch]$InstallMissing,
+      [switch]$ScopeCurrentUser
+    )
+    # Determine probable local Modules search roots
+    $scriptRoot = if ($PSScriptRoot) { $PSScriptRoot } elseif ($PSCommandPath) { Split-Path -Parent $PSCommandPath } else { (Get-Location).Path }
+    $localSearchRoots = @()
+    $candidate1 = Join-Path $scriptRoot 'Modules'
+    if (Test-Path $candidate1) { $localSearchRoots += $candidate1 }
+    if ($PSCommandPath) {
+      $moduleDir = Split-Path -Parent $PSCommandPath
+      $maybeModules = Split-Path -Parent $moduleDir
+      if ((Split-Path -Leaf $maybeModules) -eq 'Modules' -and (Test-Path $maybeModules)) { $localSearchRoots += $maybeModules }
     }
-  } catch {}
-  return $null
-}
+    $cwdModules = Join-Path (Get-Location).Path 'Modules'
+    if (Test-Path $cwdModules) { $localSearchRoots += $cwdModules }
+    $localSearchRoots = @($localSearchRoots | Select-Object -Unique)
 
-function Write-Log {
-  param(
-    [Parameter(Mandatory)][ValidateSet('INFO','WARN','ERROR','DEBUG','VERBOSE')][string]$Level,
-    [Parameter(Mandatory)][string]$Message,
-    [Parameter()][string]$Context,
-    [Parameter()][string]$LogPath,
-    [switch]$DebugMode
-  )
-  # Initialize default CSV log file once per session if none provided
-  if (-not $LogPath) {
-    if (-not (Get-Variable -Name Common_LogPath -Scope Script -ErrorAction SilentlyContinue)) {
-      $callerPath = Get-CallerScriptPath
-      $folders = Initialize-ScriptFolders -ScriptPath $callerPath
-      $scriptName = if ($callerPath) { Split-Path -Leaf $callerPath } else { 'Interactive' }
-      $tsFile = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'
-      $Script:Common_LogPath = Join-Path $folders.LogsPath ("$($scriptName)-$tsFile.csv")
-      # Write CSV header
-      "Timestamp,Level,Context,Message" | Out-File -FilePath $Script:Common_LogPath -Encoding utf8 -Append
+    Write-Log -Level INFO -Message "Checking required modules: $($ModuleNames -join ', ')" -Context 'Ensure-Modules'
+    Write-Log -Level INFO -Message "Local module search roots: $([string]::Join('; ', $localSearchRoots))" -Context 'Ensure-Modules'
+
+    $missing = @()
+    foreach ($name in $ModuleNames) {
+      # Early check: already loaded
+      $loaded = Get-Module -Name $name
+      if ($loaded) {
+        Write-Log -Level INFO -Message "Module already loaded: $name ($($loaded.Version))" -Context 'Ensure-Modules'
+        continue
+      }
+
+      # Try available in PSModulePath
+      $available = Get-Module -ListAvailable -Name $name
+      if ($available) {
+        try {
+          Import-Module -Name $name -Scope Global -ErrorAction Stop
+          Write-Log -Level INFO -Message "Imported available module: $name" -Context 'Ensure-Modules'
+          continue
+        } catch {
+          Write-Log -Level WARN -Message "Failed to import available module '$name': $($_.Exception.Message)" -Context 'Ensure-Modules'
+        }
+      }
+
+      # Try local Modules roots (manifest or module file/directory)
+      $imported = $false
+      foreach ($root in $localSearchRoots) {
+        $manifest = Get-ChildItem -Path $root -Recurse -File -Include "$name.psd1","$name.psm1" -ErrorAction SilentlyContinue | Select-Object -First 1
+        if (-not $manifest) {
+          $dirCandidate = Get-ChildItem -Path $root -Recurse -Directory -Filter $name -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($dirCandidate) {
+            $manifest = Get-ChildItem -Path $dirCandidate.FullName -File -Include "$name.psd1","$name.psm1" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $manifest) { $manifest = $dirCandidate }
+          }
+        }
+        if ($manifest) {
+          try {
+            Import-Module $manifest.FullName -Scope Global -ErrorAction Stop
+            Write-Log -Level INFO -Message "Imported local module: $name from $($manifest.FullName)" -Context 'Ensure-Modules'
+            $imported = $true
+            break
+          } catch {
+            Write-Log -Level WARN -Message "Failed to import local module '$name' from $($manifest.FullName): $($_.Exception.Message)" -Context 'Ensure-Modules'
+          }
+        }
+      }
+      if (-not $imported) { $missing += $name }
     }
-    $LogPath = $Script:Common_LogPath
-  }
 
-  $ts = Get-Date -Format 'yyyy-MM-dd HH:mm:ss.fff'
-  # Console routing (human-friendly)
-  $textEntry = if ($Context) { "$ts [$Level] [$Context] $Message" } else { "$ts [$Level] $Message" }
-  switch ($Level) {
-    'INFO'    { Write-Host $textEntry }
-    'WARN'    { Write-Warning $textEntry }
-    'ERROR'   { Write-Error $textEntry }
-    'VERBOSE' { Write-Verbose $textEntry }
-    'DEBUG'   { if ($DebugMode) { Write-Host $textEntry } }
-  }
-
-  # CSV line: Timestamp,Level,Context,Message (escape quotes)
-  $ctx = if ($Context) { $Context } else { '' }
-  $msgEsc = $Message.Replace('"','""')
-  $ctxEsc = $ctx.Replace('"','""')
-  $csvLine = '"' + $ts + '","' + $Level + '","' + $ctxEsc + '","' + $msgEsc + '"'
-  Add-Content -Path $LogPath -Value $csvLine
-}
-
-function Invoke-Retry {
-  param(
-    [Parameter(Mandatory)][scriptblock]$Action,
-    [int]$MaxAttempts = 3,
-    [int]$DelaySeconds = 2,
-    [switch]$Jitter
-  )
-  for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
-    try { return & $Action } catch {
-      Write-Log -Level 'WARN' -Message "Attempt $attempt failed: $($_.Exception.Message)" -Context 'Retry'
-      if ($attempt -eq $MaxAttempts) { throw }
-      $sleep = $DelaySeconds
-      if ($Jitter) { $sleep += Get-Random -Minimum 0 -Maximum [Math]::Max(1, [int]($DelaySeconds/2)) }
-      Start-Sleep -Seconds $sleep
+    $missingList = @($missing)
+    if ($missingList.Count -gt 0) {
+      Write-Log -Level WARN -Message "Missing modules after import attempts: $($missingList -join ', ')" -Context 'Ensure-Modules'
+      if (-not $InstallMissing) { throw "Missing required modules: $($missingList -join ', '). Set -InstallMissing to auto-install." }
+      foreach ($m in $missingList) {
+        $scope = if ($ScopeCurrentUser) { 'CurrentUser' } else { 'AllUsers' }
+        try {
+          if (-not (Get-Module -ListAvailable -Name PowerShellGet)) {
+            Write-Log -Level WARN -Message "PowerShellGet not available; attempting install via PSGallery requires PowerShellGet." -Context 'Ensure-Modules'
+          }
+          Write-Log -Level INFO -Message "Installing module '$m' (Scope=$scope)" -Context 'Ensure-Modules'
+          Install-Module -Name $m -Scope $scope -Force -ErrorAction Stop
+          Import-Module -Name $m -Scope Global -ErrorAction Stop
+          Write-Log -Level INFO -Message "Installed and imported: $m" -Context 'Ensure-Modules'
+        } catch {
+          Write-Log -Level ERROR -Message "Failed to install/import module '$m': $($_.Exception.Message)" -Context 'Ensure-Modules'
+          throw
+        }
+      }
     }
-  }
-}
 
-function Load-Config {
-  param([Parameter()][string]$ConfigPath)
+    # Final validation
+    $notLoaded = @()
+    foreach ($name in $ModuleNames) {
+      if (-not (Get-Module -Name $name)) { $notLoaded += $name }
+    }
+    if ($notLoaded.Count -gt 0) {
+      Write-Log -Level ERROR -Message "Modules not loaded: $($notLoaded -join ', ')" -Context 'Ensure-Modules'
+      throw "Modules not loaded: $($notLoaded -join ', ')"
+    }
+    Write-Log -Level INFO -Message "All required modules loaded successfully." -Context 'Ensure-Modules'
+    return $true
+  }
   $cfg = @{}
   if (-not $ConfigPath) { return $cfg }
   if (-not (Test-Path $ConfigPath)) { throw "ConfigPath '$ConfigPath' not found" }
