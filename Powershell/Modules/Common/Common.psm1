@@ -112,19 +112,30 @@ function Ensure-Modules {
         $missing += $name
       }
     } else {
-      # Try local Modules path if present
+      # Try local Modules path if present (support .psd1/.psm1 or module folder)
       if ($hasLocalModules) {
-        $candidate = Get-ChildItem -Path $localModulesRoot -Recurse -Directory -Filter $name -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($candidate) {
+        # First, look for manifest or module file named exactly like the module
+        $manifest = Get-ChildItem -Path $localModulesRoot -Recurse -File -Include "$name.psd1","$name.psm1" -ErrorAction SilentlyContinue | Select-Object -First 1
+        if (-not $manifest) {
+          # Next, look for a directory named like the module
+          $dirCandidate = Get-ChildItem -Path $localModulesRoot -Recurse -Directory -Filter $name -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($dirCandidate) {
+            # If directory, see if it contains a matching manifest/module file
+            $manifest = Get-ChildItem -Path $dirCandidate.FullName -File -Include "$name.psd1","$name.psm1" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $manifest) { $manifest = $dirCandidate }
+          }
+        }
+
+        if ($manifest) {
           try {
-            Import-Module $candidate.FullName -ErrorAction Stop
-            Write-Log -Level INFO -Message "Imported local module: $name from $($candidate.FullName)" -Context 'Ensure-Modules'
+            Import-Module $manifest.FullName -ErrorAction Stop
+            Write-Log -Level INFO -Message "Imported local module: $name from $($manifest.FullName)" -Context 'Ensure-Modules'
             continue
           } catch {
-            Write-Log -Level WARN -Message "Failed to import local module '$name' from $($candidate.FullName): $($_.Exception.Message)" -Context 'Ensure-Modules'
+            Write-Log -Level WARN -Message "Failed to import local module '$name' from $($manifest.FullName): $($_.Exception.Message)" -Context 'Ensure-Modules'
           }
         } else {
-          Write-Log -Level VERBOSE -Message "Local module not found under $localModulesRoot for '$name'" -Context 'Ensure-Modules'
+          Write-Log -Level VERBOSE -Message "Local module file/folder not found under $localModulesRoot for '$name'" -Context 'Ensure-Modules'
         }
       }
       $missing += $name
