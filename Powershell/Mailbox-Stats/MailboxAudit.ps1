@@ -24,12 +24,13 @@ $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'Modules/Common') -ErrorAction Stop
 Start-FastLog | Out-Null
 
-# Load local, untracked secrets if present
+<# Load local, untracked secrets if present
 $varsPath = Join-Path $PSScriptRoot 'psvariables.ps1'
 if (Test-Path $varsPath) { . $varsPath } else { Write-Verbose "psvariables.ps1 not found in $PSScriptRoot" }
+#>
 
 # Ensure required modules and import Exchange Online
-Ensure-Modules -ModuleNames @('ActiveDirectory','ExchangeOnlineManagement') -InstallMissing -ScopeCurrentUser
+Ensure-Modules -ModuleNames @('ExchangeOnlineManagement') -InstallMissing -ScopeCurrentUser
 Import-Module ExchangeOnlineManagement -ErrorAction Stop
 
 # Connect to Exchange Online (cert-based app preferred if variables provided)
