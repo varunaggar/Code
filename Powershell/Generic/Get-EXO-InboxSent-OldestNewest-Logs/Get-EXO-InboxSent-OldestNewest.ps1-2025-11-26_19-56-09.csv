@@ -1,0 +1,12 @@
+Timestamp,Level,Context,Message
+"2025-11-26 19:56:09.810","INFO","Init","Loaded Common module from: /Users/varunaggarwal/Documents/Code/Powershell/Generic/../Modules/Common/Common.psm1"
+"2025-11-26 19:56:09.825","INFO","Ensure-Modules","Checking required modules: ExchangeOnlineManagement"
+"2025-11-26 19:56:09.826","INFO","Ensure-Modules","Local module search roots: /Users/varunaggarwal/Documents/Code/Powershell/Modules"
+"2025-11-26 19:56:09.870","INFO","Ensure-Modules","Imported available module: ExchangeOnlineManagement"
+"2025-11-26 19:56:09.873","INFO","Ensure-Modules","All required modules loaded successfully."
+"2025-11-26 19:56:09.873","INFO","Init","ExchangeOnlineManagement ensured/loaded."
+"2025-11-26 19:56:09.874","INFO","Connect","Connecting to Exchange Online…"
+"2025-11-26 19:56:15.986","INFO","Targets","Gathering targets…"
+"2025-11-26 19:56:16.729","INFO","Targets","Total mailboxes: 18"
+"2025-11-26 19:56:24.560","INFO","Output","Writing CSV: ./InboxSent-OldestNewest.csv"
+"2025-11-26 19:56:24.562","INFO","Output","Done."

@@ -37,28 +37,45 @@ if (-not (Test-Path $commonPath)) {
 Import-Module $commonPath -ErrorAction Stop
 Write-Log -Level INFO -Message "Loaded Common module from: $commonPath" -Context 'Init' -DebugMode:$DebugMode
 
-function Ensure-EXOModule {
+function Ensure-EXOReady {
+  param([switch]$ForceConnect)
+
+  # Ensure module present and imported
   Ensure-Modules -ModuleNames @('ExchangeOnlineManagement') -InstallMissing -ScopeCurrentUser | Out-Null
   Write-Log -Level INFO -Message 'ExchangeOnlineManagement ensured/loaded.' -Context 'Init' -DebugMode:$DebugMode
-}
 
-function Connect-EXOIfNeeded {
-  if (-not (Get-ConnectionInformation)) {
+  # Determine connectivity by a quick probe
+  $connected = $false
+  if (-not $ForceConnect) {
+    try {
+      # Some environments may return connection info but still be unusable; probe a lightweight call
+      if (Get-Command Get-EXOMailbox -ErrorAction SilentlyContinue) {
+        Get-EXOMailbox -ResultSize 1 -ErrorAction Stop | Out-Null
+      } else {
+        Get-ConnectionInformation -ErrorAction Stop | Out-Null
+      }
+      $connected = $true
+    } catch {
+      $connected = $false
+    }
+  }
+
+  if (-not $connected) {
     Write-Log -Level INFO -Message 'Connecting to Exchange Online…' -Context 'Connect' -DebugMode:$DebugMode
+    try { Disconnect-ExchangeOnline -Confirm:$false -ErrorAction SilentlyContinue | Out-Null } catch {}
     Connect-ExchangeOnline -ShowProgress:$false
   } else {
-    Write-Log -Level INFO -Message 'Existing EXO connection detected.' -Context 'Connect' -DebugMode:$DebugMode
+    Write-Log -Level INFO -Message 'Existing usable EXO connection detected.' -Context 'Connect' -DebugMode:$DebugMode
   }
 }
 
 function Get-Targets {
   if ($AllMailboxes) {
-    # Prefer EXO v3 REST cmdlet if available, else fallback
-    if (Get-Command Get-EXOMailbox -ErrorAction SilentlyContinue) {
-      return Get-EXOMailbox -ResultSize Unlimited | Select-Object -ExpandProperty UserPrincipalName
-    } else {
-      return Get-Mailbox -ResultSize Unlimited | Select-Object -ExpandProperty UserPrincipalName
+    # Use EXO v3 REST cmdlet only
+    if (-not (Get-Command Get-EXOMailbox -ErrorAction SilentlyContinue)) {
+      throw 'Get-EXOMailbox not available. Ensure ExchangeOnlineManagement v3+ is installed and connected.'
     }
+    return Get-EXOMailbox -ResultSize Unlimited | Select-Object -ExpandProperty UserPrincipalName
   }
   if ($InputCsv) {
     if (-not (Test-Path $InputCsv)) { throw "InputCsv not found: $InputCsv" }
@@ -72,11 +89,10 @@ function Get-FolderStatsSafe {
     [Parameter(Mandatory)][string]$Identity,
     [Parameter(Mandatory)][ValidateSet('Inbox','SentItems')][string]$FolderType
   )
-  if (Get-Command Get-EXOMailboxFolderStatistics -ErrorAction SilentlyContinue) {
-    $stats = Get-EXOMailboxFolderStatistics -Identity $Identity -FolderScope $FolderType -IncludeOldestAndNewestItems -ErrorAction Stop
-  } else {
-    $stats = Get-MailboxFolderStatistics -Identity $Identity -FolderScope $FolderType -IncludeOldestAndNewestItems -ErrorAction Stop
+  if (-not (Get-Command Get-EXOMailboxFolderStatistics -ErrorAction SilentlyContinue)) {
+    throw 'Get-EXOMailboxFolderStatistics not available. Ensure ExchangeOnlineManagement v3+ is installed and connected.'
   }
+  $stats = Get-EXOMailboxFolderStatistics -Identity $Identity -FolderScope $FolderType -IncludeOldestAndNewestItems -ErrorAction Stop
   $root = $stats | Where-Object { $_.FolderType -eq $FolderType } | Select-Object -First 1
   if (-not $root) { $root = $stats | Select-Object -First 1 }
   return $root
@@ -102,8 +118,7 @@ function Collect-OneMailbox {
 }
 
 # --- Main ---
-Ensure-EXOModule
-if ($Connect) { Connect-EXOIfNeeded }
+if ($Connect) { Ensure-EXOReady -ForceConnect } else { Ensure-EXOReady }
 Write-Log -Level INFO -Message 'Gathering targets…' -Context 'Targets' -DebugMode:$DebugMode
 $targets = Get-Targets | Where-Object { $_ } | Sort-Object -Unique
 Write-Log -Level INFO -Message "Total mailboxes: $($targets.Count)" -Context 'Targets' -DebugMode:$DebugMode
@@ -112,13 +127,8 @@ $results = $targets | ForEach-Object -Parallel {
   try {
     # Single-attempt stats collection inside the parallel runspace
     $id = $_
-    if (Get-Command Get-EXOMailboxFolderStatistics -ErrorAction SilentlyContinue) {
-      $inboxStats = Get-EXOMailboxFolderStatistics -Identity $id -FolderScope Inbox -IncludeOldestAndNewestItems -ErrorAction Stop
-      $sentStats  = Get-EXOMailboxFolderStatistics -Identity $id -FolderScope SentItems -IncludeOldestAndNewestItems -ErrorAction Stop
-    } else {
-      $inboxStats = Get-MailboxFolderStatistics -Identity $id -FolderScope Inbox -IncludeOldestAndNewestItems -ErrorAction Stop
-      $sentStats  = Get-MailboxFolderStatistics -Identity $id -FolderScope SentItems -IncludeOldestAndNewestItems -ErrorAction Stop
-    }
+    $inboxStats = Get-EXOMailboxFolderStatistics -Identity $id -FolderScope Inbox -IncludeOldestAndNewestItems -ErrorAction Stop
+    $sentStats  = Get-EXOMailboxFolderStatistics -Identity $id -FolderScope SentItems -IncludeOldestAndNewestItems -ErrorAction Stop
     $inbox = $inboxStats | Where-Object { $_.FolderType -eq 'Inbox' } | Select-Object -First 1
     if (-not $inbox) { $inbox = $inboxStats | Select-Object -First 1 }
     $sent  = $sentStats  | Where-Object { $_.FolderType -eq 'SentItems' } | Select-Object -First 1
