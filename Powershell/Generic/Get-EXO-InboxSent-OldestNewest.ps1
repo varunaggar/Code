@@ -22,7 +22,7 @@ param(
   [string]$InputCsv,
   [string]$OutputCsv = './InboxSent-OldestNewest.csv',
   [string]$ProgressFile,
-  [int]$ThrottleLimit = 16,
+  [int]$ThrottleLimit = [Math]::Max(4, [Environment]::ProcessorCount * 2),
   [switch]$DebugMode,
   [switch]$ShowProgress
 )
@@ -65,7 +65,7 @@ function Ensure-EXOReady {
   if (-not $connected) {
     Write-Log -Level INFO -Message 'Connecting to Exchange Online…' -Context 'Connect' -DebugMode:$DebugMode
     try { Disconnect-ExchangeOnline -Confirm:$false -ErrorAction SilentlyContinue | Out-Null } catch {}
-    Connect-ExchangeOnline -ShowProgress:$false
+    Connect-ExchangeOnline -ShowProgress:$false -UseMultithreading:$true
   } else {
     Write-Log -Level INFO -Message 'Existing usable EXO connection detected.' -Context 'Connect' -DebugMode:$DebugMode
   }
@@ -121,6 +121,8 @@ function Collect-OneMailbox {
 
 # --- Main ---
 if ($Connect) { Ensure-EXOReady -ForceConnect } else { Ensure-EXOReady }
+$exoModule = Get-Module -Name ExchangeOnlineManagement -ErrorAction Stop
+$exoModulePath = $exoModule.Path
 Write-Log -Level INFO -Message 'Gathering targets…' -Context 'Targets' -DebugMode:$DebugMode
 $targets = Get-Targets | Where-Object { $_ } | Sort-Object -Unique
 Write-Log -Level INFO -Message "Total mailboxes: $($targets.Count)" -Context 'Targets' -DebugMode:$DebugMode
@@ -168,9 +170,13 @@ Write-Log -Level INFO -Message "Processing and streaming results to CSV…" -Con
 $total = [int]$remaining.Count
 $processedCount = 0
 if ($ShowProgress) { Write-Progress -Activity 'Preparing processing' -Status "0/$total" -PercentComplete 0 }
+$logInterval = if ($total -gt 0) { [Math]::Max([int][Math]::Ceiling($total / 10), 1) } else { 1 }
 $remaining |
   ForEach-Object -Parallel {
     $id = $_
+    if ($using:exoModulePath -and -not (Get-Module -Name ExchangeOnlineManagement -ErrorAction SilentlyContinue)) {
+      Import-Module $using:exoModulePath -ErrorAction Stop | Out-Null
+    }
     $inboxItems = ''
     $inOld = ''
     $inNew = ''
@@ -236,7 +242,9 @@ $remaining |
     if ($ShowProgress) {
       Write-Progress -Activity 'Processing mailboxes' -Status "$processedCount/$total" -PercentComplete $pct
     } else {
-      Write-Log -Level INFO -Message "Processed $processedCount/$total ($pct%)" -Context 'Progress' -DebugMode:$DebugMode
+      if (($processedCount % $logInterval -eq 0) -or ($processedCount -eq $total)) {
+        Write-Log -Level INFO -Message "Processed $processedCount/$total ($pct%)" -Context 'Progress' -DebugMode:$DebugMode
+      }
     }
   }
 
