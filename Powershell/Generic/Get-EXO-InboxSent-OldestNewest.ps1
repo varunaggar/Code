@@ -55,9 +55,9 @@ function Get-Targets {
   if ($AllMailboxes) {
     # Prefer EXO v3 REST cmdlet if available, else fallback
     if (Get-Command Get-EXOMailbox -ErrorAction SilentlyContinue) {
-      return Get-EXOMailbox -ResultSize Unlimited -RecipientTypeDetails UserMailbox | Select-Object -ExpandProperty UserPrincipalName
+      return Get-EXOMailbox -ResultSize Unlimited | Select-Object -ExpandProperty UserPrincipalName
     } else {
-      return Get-Mailbox -ResultSize Unlimited -RecipientTypeDetails UserMailbox | Select-Object -ExpandProperty UserPrincipalName
+      return Get-Mailbox -ResultSize Unlimited | Select-Object -ExpandProperty UserPrincipalName
     }
   }
   if ($InputCsv) {
