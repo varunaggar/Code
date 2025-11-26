@@ -1,3 +1,7 @@
+# Import common helpers and start fast logging
+Import-Module (Join-Path $PSScriptRoot 'Modules/Common') -ErrorAction Stop
+Start-FastLog | Out-Null
+
 # Load untracked secrets/config if present
 $varsPath = Join-Path $PSScriptRoot 'psvariables.ps1'
 if (Test-Path $varsPath) { . $varsPath } else { Write-Verbose "psvariables.ps1 not found in $PSScriptRoot; ensure required variables are provided via environment or secure vault." }
@@ -36,5 +40,8 @@ $settings = "https://graph.microsoft.com/beta/users/bharati@uccloud.uk/settings/
 $folders = "https://graph.microsoft.com/beta/users/bharati@uccloud.uk/mailFolders"
 
 $response = Invoke-RestMethod -Uri $folders -Headers $headers -Method Get
+Write-FastLog -Level INFO -Message "Fetched folders for target user" -Context 'Graph'
 
 $inbox = "AQMkAGI0ODc4NzcAMC1hMjM2LTRmYzktOGUxMy0wYzdmYjliODA1MDIALgAAA1PRFTPudDRPsJBiUujqnmwBAJWaqMWxnFtKhKK0biaujjoAAAIBDAAAAA=="
+Write-FastLog -Level INFO -Message "Script completed" -Context 'End'
+Stop-FastLog

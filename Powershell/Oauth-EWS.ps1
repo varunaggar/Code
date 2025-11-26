@@ -1,3 +1,7 @@
+# Import common helpers and start fast logging
+Import-Module (Join-Path $PSScriptRoot 'Modules/Common') -ErrorAction Stop
+Start-FastLog | Out-Null
+
 # Load untracked secrets/config if present
 $varsPath = Join-Path $PSScriptRoot 'psvariables.ps1'
 if (Test-Path $varsPath) { . $varsPath } else { Write-Verbose "psvariables.ps1 not found in $PSScriptRoot; ensure required variables are provided via environment or secure vault." }
@@ -24,6 +28,7 @@ $ExchangeVersion = [Microsoft.Exchange.WebServices.Data.ExchangeVersion]::Exchan
 $Service = [Microsoft.Exchange.WebServices.Data.ExchangeService]::new()
 $Service.Url = "https://outlook.office365.com/EWS/Exchange.asmx"
 $Service.Credentials = [Microsoft.Exchange.WebServices.Data.OAuthCredentials]$TokenResult.AccessToken
+Write-FastLog -Level INFO -Message "Obtained token and configured EWS service" -Context 'Auth'
 
 $SMTP = ‘varun.aggarwal@uccloud.uk’
 $service.ImpersonatedUserId = New-Object Microsoft.Exchange.WebServices.Data.ImpersonatedUserId([Microsoft.Exchange.WebServices.Data.ConnectingIdType]::SmtpAddress,$SMTP);
@@ -151,7 +156,7 @@ $fiResult = $null
                 [System.Int32]$i='1'
                 ForEach ($Folder in $fiResult) {
                     If (($Folder.Displayname -ne 'System') -and ($Folder.Displayname -ne 'Audits')) {
-                        Write-Output "Working on $($Folder.Displayname)"
+                        Write-FastLog -Level VERBOSE -Message "Working on $($Folder.Displayname)" -Context 'Folders'
                         #Load Properties
                         $Folder.Load($folderPropset)
                         #$Folder.ExtendedProperties[0].Value
@@ -312,7 +317,7 @@ function ConvertToString($ipInputString){
                             -PercentComplete ( $i / $fiResult.Folders.count * 100) `
                             -Status "Remaining: $($fiResult.Folders.count - $i) processing folder: $($Folder.DisplayName)"
                     If (($Folder.Displayname -ne 'System') -and ($Folder.Displayname -ne 'Audits')) {
-                        #Write-Output "Working on $($Folder.Displayname)"
+                        #Write-FastLog -Level VERBOSE -Message "Working on $($Folder.Displayname)" -Context 'Folders'
                         #Load Properties
                         $Folder.Load($folderPropset)
                         #$Folder.ExtendedProperties[0].Value
