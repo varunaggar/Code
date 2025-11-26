@@ -21,7 +21,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-Import-Module (Join-Path $PSScriptRoot 'Modules/Common') -ErrorAction Stop
+Import-Module (Join-Path (Split-Path $PSScriptRoot -Parent) 'Modules/Common') -ErrorAction Stop
 Start-FastLog | Out-Null
 
 <# Load local, untracked secrets if present
@@ -35,9 +35,15 @@ Import-Module ExchangeOnlineManagement -ErrorAction Stop
 
 # Connect to Exchange Online (cert-based app preferred if variables provided)
 try {
-  if ($EXO_AppId -and $EXO_TenantId -and $EXO_CertificateThumbprint) {
+  $appVarObj = Get-Variable -Name EXO_AppId -ErrorAction SilentlyContinue
+  $tenVarObj = Get-Variable -Name EXO_TenantId -ErrorAction SilentlyContinue
+  $thmVarObj = Get-Variable -Name EXO_CertificateThumbprint -ErrorAction SilentlyContinue
+  $appIdVar = if ($appVarObj) { $appVarObj.Value } else { $null }
+  $tenantVar = if ($tenVarObj) { $tenVarObj.Value } else { $null }
+  $thumbVar = if ($thmVarObj) { $thmVarObj.Value } else { $null }
+  if ($appIdVar -and $tenantVar -and $thumbVar) {
     Write-FastLog -Level INFO -Message "Connecting to EXO (app cert)." -Context 'EXO'
-    Connect-ExchangeOnline -AppId $EXO_AppId -Organization $EXO_TenantId -CertificateThumbprint $EXO_CertificateThumbprint -ShowBanner:$false -ErrorAction Stop
+    Connect-ExchangeOnline -AppId $appIdVar -Organization $tenantVar -CertificateThumbprint $thumbVar -ShowBanner:$false -ErrorAction Stop
   } else {
     Write-FastLog -Level INFO -Message "Connecting to EXO (interactive)." -Context 'EXO'
     Connect-ExchangeOnline -ShowBanner:$false -ErrorAction Stop
@@ -62,9 +68,10 @@ $pool = [runspacefactory]::CreateRunspacePool([int]$MinThreads, [int]$MaxThreads
 $pool.Open()
 
 # Define worker
+$commonPath = (Join-Path (Split-Path $PSScriptRoot -Parent) 'Modules/Common')
 $worker = {
-  param($Alias, $Email)
-  Import-Module (Join-Path $PSScriptRoot 'Modules/Common') -ErrorAction Stop
+  param($Alias, $Email, $CommonPath)
+  Import-Module $CommonPath -ErrorAction Stop
 
   function Get-ADCustom { param($Email)
     Invoke-Retry -Action {
@@ -185,7 +192,7 @@ $jobs = @()
 foreach ($row in $rows) {
   $ps = [powershell]::Create()
   $ps.RunspacePool = $pool
-  [void]$ps.AddScript($worker).AddArgument($row.Alias).AddArgument($row.Email)
+  [void]$ps.AddScript($worker).AddArgument($row.Alias).AddArgument($row.Email).AddArgument($commonPath)
   $jobs += [pscustomobject]@{ Handle = $ps.BeginInvoke(); PS = $ps }
 }
 

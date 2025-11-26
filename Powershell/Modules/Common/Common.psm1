@@ -11,6 +11,25 @@ function Ensure-Directory {
   return (Resolve-Path $Path).Path
 }
 
+function Get-CallerScriptPath {
+  param()
+  try {
+    $modulePath = $PSCommandPath
+    $moduleResolved = $null
+    if ($modulePath -and (Test-Path $modulePath)) { $moduleResolved = (Resolve-Path $modulePath -ErrorAction SilentlyContinue).Path }
+    $frames = @(Get-PSCallStack) # Most-recent-first
+    foreach ($f in $frames) {
+      $p = $f.ScriptName
+      if ([string]::IsNullOrWhiteSpace($p)) { continue }
+      if (-not (Test-Path $p)) { continue }
+      $resolved = (Resolve-Path $p -ErrorAction SilentlyContinue).Path
+      if ($moduleResolved -and $resolved -eq $moduleResolved) { continue }
+      return $resolved
+    }
+  } catch {}
+  return $null
+}
+
 function Write-Log {
   param(
     [Parameter(Mandatory)][ValidateSet('INFO','WARN','ERROR','DEBUG','VERBOSE')][string]$Level,
@@ -22,8 +41,9 @@ function Write-Log {
   # Initialize default CSV log file once per session if none provided
   if (-not $LogPath) {
     if (-not (Get-Variable -Name Common_LogPath -Scope Script -ErrorAction SilentlyContinue)) {
-      $folders = Initialize-ScriptFolders -ScriptPath $PSCommandPath
-      $scriptName = Split-Path -Leaf $PSCommandPath
+      $callerPath = Get-CallerScriptPath
+      $folders = Initialize-ScriptFolders -ScriptPath $callerPath
+      $scriptName = if ($callerPath) { Split-Path -Leaf $callerPath } else { 'Interactive' }
       $tsFile = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'
       $Script:Common_LogPath = Join-Path $folders.LogsPath ("$($scriptName)-$tsFile.csv")
       # Write CSV header
@@ -47,7 +67,7 @@ function Write-Log {
   $ctx = if ($Context) { $Context } else { '' }
   $msgEsc = $Message.Replace('"','""')
   $ctxEsc = $ctx.Replace('"','""')
-  $csvLine = '"{0}","{1}","{2}","{3}"' -f $ts, $Level, $ctxEsc, $msgEsc
+  $csvLine = '"' + $ts + '","' + $Level + '","' + $ctxEsc + '","' + $msgEsc + '"'
   Add-Content -Path $LogPath -Value $csvLine
 }
 
@@ -210,11 +230,10 @@ function Initialize-ScriptFolders {
     [Parameter()][string]$ScriptPath,
     [Parameter()][string]$ScriptName
   )
-  if (-not $ScriptName) {
-    if ($ScriptPath) { $ScriptName = Split-Path -Leaf $ScriptPath } elseif ($PSCommandPath) { $ScriptName = Split-Path -Leaf $PSCommandPath } else { throw 'Provide ScriptName or ScriptPath.' }
-  }
+  if (-not $ScriptPath) { $ScriptPath = Get-CallerScriptPath }
+  if (-not $ScriptName) { $ScriptName = if ($ScriptPath) { Split-Path -Leaf $ScriptPath } else { 'Interactive' } }
   $baseName = [System.IO.Path]::GetFileNameWithoutExtension($ScriptName)
-  $scriptRoot = if ($ScriptPath) { Split-Path -Parent $ScriptPath } elseif ($PSScriptRoot) { $PSScriptRoot } elseif ($PSCommandPath) { Split-Path -Parent $PSCommandPath } else { (Get-Location).Path }
+  $scriptRoot = if ($ScriptPath) { Split-Path -Parent $ScriptPath } elseif ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
   $outputDir = Join-Path $scriptRoot ("$baseName-Output")
   $logsDir   = Join-Path $scriptRoot ("$baseName-Logs")
   foreach ($dir in @($outputDir,$logsDir)) { if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir | Out-Null } }
@@ -230,8 +249,9 @@ function Start-FastLog {
     [Parameter()][int]$BufferSize = 65536
   )
   if (-not $LogPath) {
-    $folders = Initialize-ScriptFolders -ScriptPath $PSCommandPath
-    $scriptName = Split-Path -Leaf $PSCommandPath
+    $callerPath = Get-CallerScriptPath
+    $folders = Initialize-ScriptFolders -ScriptPath $callerPath
+    $scriptName = if ($callerPath) { Split-Path -Leaf $callerPath } else { 'Interactive' }
     $tsFile = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'
     $LogPath = Join-Path $folders.LogsPath ("$($scriptName)-$tsFile-fast.csv")
   }
@@ -256,7 +276,7 @@ function Write-FastLog {
   $ts = Get-Date -Format 'yyyy-MM-dd HH:mm:ss.fff'
   $msgEsc = $Message.Replace('"','""')
   $ctxEsc = $Context.Replace('"','""')
-  $Script:Common_FastLogWriter.WriteLine('"{0}","{1}","{2}","{3}"' -f $ts,$Level,$ctxEsc,$msgEsc)
+  $Script:Common_FastLogWriter.WriteLine('"' + $ts + '","' + $Level + '","' + $ctxEsc + '","' + $msgEsc + '"')
 }
 
 function Stop-FastLog {
@@ -267,4 +287,4 @@ function Stop-FastLog {
   }
 }
 
-Export-ModuleMember -Function Start-FastLog, Write-FastLog, Stop-FastLog
+Export-ModuleMember -Function Start-FastLog, Write-FastLog, Stop-FastLog, Get-CallerScriptPath

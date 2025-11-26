@@ -1,0 +1,5 @@
+﻿Timestamp,Level,Context,Message
+"2025-11-26 12:06:58.805","INFO","EXO","Connecting to EXO (interactive)."
+"2025-11-26 12:07:12.472","INFO","EXO","EXO connected."
+"2025-11-26 12:07:12.474","INFO","Input","Loaded 2 mailboxes from CSV."
+"2025-11-26 12:07:12.513","INFO","Output","Wrote results to /Users/varunaggarwal/Documents/Code/Powershell/Mailbox-Stats/MailboxAudit-Output/mailbox-audit.csv"
