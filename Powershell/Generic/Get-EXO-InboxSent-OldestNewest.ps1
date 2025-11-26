@@ -21,6 +21,7 @@ param(
   [switch]$AllMailboxes,
   [string]$InputCsv,
   [string]$OutputCsv = './InboxSent-OldestNewest.csv',
+  [string]$ProgressFile,
   [int]$ThrottleLimit = 16,
   [switch]$DebugMode
 )
@@ -123,36 +124,109 @@ Write-Log -Level INFO -Message 'Gathering targets…' -Context 'Targets' -DebugM
 $targets = Get-Targets | Where-Object { $_ } | Sort-Object -Unique
 Write-Log -Level INFO -Message "Total mailboxes: $($targets.Count)" -Context 'Targets' -DebugMode:$DebugMode
 
-$results = $targets | ForEach-Object -Parallel {
+# Resolve progress file path and load processed set
+if (-not $ProgressFile -or $ProgressFile.Trim() -eq '') {
+  $ProgressFile = "$OutputCsv.progress"
+}
+Write-Log -Level INFO -Message "Using progress file: $ProgressFile" -Context 'Progress' -DebugMode:$DebugMode
+$processed = New-Object System.Collections.Generic.HashSet[string]
+if (Test-Path $ProgressFile) {
   try {
-    # Single-attempt stats collection inside the parallel runspace
-    $id = $_
-    $inboxStats = Get-EXOMailboxFolderStatistics -Identity $id -FolderScope Inbox -IncludeOldestAndNewestItems -ErrorAction Stop
-    $sentStats  = Get-EXOMailboxFolderStatistics -Identity $id -FolderScope SentItems -IncludeOldestAndNewestItems -ErrorAction Stop
-    $inbox = $inboxStats | Where-Object { $_.FolderType -eq 'Inbox' } | Select-Object -First 1
-    if (-not $inbox) { $inbox = $inboxStats | Select-Object -First 1 }
-    $sent  = $sentStats  | Where-Object { $_.FolderType -eq 'SentItems' } | Select-Object -First 1
-    if (-not $sent)  { $sent  = $sentStats  | Select-Object -First 1 }
+    foreach ($line in Get-Content -Path $ProgressFile -ErrorAction Stop) {
+      $upn = $line.Split(',')[0].Trim()
+      if ($upn) { $null = $processed.Add($upn) }
+    }
+    Write-Log -Level INFO -Message "Loaded $($processed.Count) processed mailboxes from progress file." -Context 'Progress' -DebugMode:$DebugMode
+  } catch {
+    Write-Log -Level WARN -Message "Failed to read progress file. Starting fresh. Error: $($_.Exception.Message)" -Context 'Progress' -DebugMode:$DebugMode
+  }
+}
 
-    $inOld = if ($inbox.OldestItemReceivedDate) { (Get-Date -Date $inbox.OldestItemReceivedDate).ToString('yyyy-MM-dd') } else { '' }
-    $inNew = if ($inbox.NewestItemReceivedDate) { (Get-Date -Date $inbox.NewestItemReceivedDate).ToString('yyyy-MM-dd') } else { '' }
-    $sOld  = if ($sent.OldestItemReceivedDate)  { (Get-Date -Date $sent.OldestItemReceivedDate).ToString('yyyy-MM-dd') }  else { '' }
-    $sNew  = if ($sent.NewestItemReceivedDate)  { (Get-Date -Date $sent.NewestItemReceivedDate).ToString('yyyy-MM-dd') }  else { '' }
+# Compute remaining targets
+$remaining = @($targets | Where-Object { -not $processed.Contains($_) })
+Write-Log -Level INFO -Message "Remaining mailboxes: $($remaining.Count)" -Context 'Progress' -DebugMode:$DebugMode
+
+# Ensure CSV exists or will be created with headers by first append
+if (-not (Test-Path $OutputCsv)) {
+  Write-Log -Level INFO -Message "Initializing CSV: $OutputCsv" -Context 'Output' -DebugMode:$DebugMode
+  [PSCustomObject]@{
+    UserPrincipalName   = ''
+    InboxItems          = ''
+    InboxOldestReceived = ''
+    InboxNewestReceived = ''
+    SentItemsItems      = ''
+    SentItemsOldestSent = ''
+    SentItemsNewestSent = ''
+  } | Select-Object UserPrincipalName,InboxItems,InboxOldestReceived,InboxNewestReceived,SentItemsItems,SentItemsOldestSent,SentItemsNewestSent |
+    Export-Csv -Path $OutputCsv -NoTypeInformation -Encoding UTF8
+  # Remove the placeholder row
+  (Get-Content $OutputCsv | Select-Object -SkipLast 1) | Set-Content $OutputCsv
+}
+
+Write-Log -Level INFO -Message "Processing and streaming results to CSV…" -Context 'Output' -DebugMode:$DebugMode
+$remaining |
+  ForEach-Object -Parallel {
+    $id = $_
+    $inboxItems = ''
+    $inOld = ''
+    $inNew = ''
+    $sentItems = ''
+    $sOld = ''
+    $sNew = ''
+
+    try {
+      $inboxStats = Get-EXOMailboxFolderStatistics -Identity $id -FolderScope Inbox -IncludeOldestAndNewestItems -ErrorAction Stop
+      $inbox = $inboxStats | Where-Object { $_.FolderType -eq 'Inbox' } | Select-Object -First 1
+      if (-not $inbox) { $inbox = $inboxStats | Select-Object -First 1 }
+      if ($inbox) {
+        $inboxItems = $inbox.ItemsInFolder
+        $inOld = if ($inbox.OldestItemReceivedDate) { (Get-Date -Date $inbox.OldestItemReceivedDate).ToString('yyyy-MM-dd') } else { '' }
+        $inNew = if ($inbox.NewestItemReceivedDate) { (Get-Date -Date $inbox.NewestItemReceivedDate).ToString('yyyy-MM-dd') } else { '' }
+      } else {
+        $inboxItems = 'cmdlet failure'
+        $inOld = 'cmdlet failure'
+        $inNew = 'cmdlet failure'
+      }
+    } catch {
+      $inboxItems = 'cmdlet failure'
+      $inOld = 'cmdlet failure'
+      $inNew = 'cmdlet failure'
+    }
+
+    try {
+      $sentStats  = Get-EXOMailboxFolderStatistics -Identity $id -FolderScope SentItems -IncludeOldestAndNewestItems -ErrorAction Stop
+      $sent  = $sentStats  | Where-Object { $_.FolderType -eq 'SentItems' } | Select-Object -First 1
+      if (-not $sent)  { $sent  = $sentStats  | Select-Object -First 1 }
+      if ($sent) {
+        $sentItems = $sent.ItemsInFolder
+        $sOld  = if ($sent.OldestItemReceivedDate)  { (Get-Date -Date $sent.OldestItemReceivedDate).ToString('yyyy-MM-dd') }  else { '' }
+        $sNew  = if ($sent.NewestItemReceivedDate)  { (Get-Date -Date $sent.NewestItemReceivedDate).ToString('yyyy-MM-dd') }  else { '' }
+      } else {
+        $sentItems = 'cmdlet failure'
+        $sOld = 'cmdlet failure'
+        $sNew = 'cmdlet failure'
+      }
+    } catch {
+      $sentItems = 'cmdlet failure'
+      $sOld = 'cmdlet failure'
+      $sNew = 'cmdlet failure'
+    }
 
     [PSCustomObject]@{
       UserPrincipalName     = $id
-      InboxItems            = $inbox.ItemsInFolder
+      InboxItems            = $inboxItems
       InboxOldestReceived   = $inOld
       InboxNewestReceived   = $inNew
-      SentItemsItems        = $sent.ItemsInFolder
+      SentItemsItems        = $sentItems
       SentItemsOldestSent   = $sOld
       SentItemsNewestSent   = $sNew
     }
-  } catch {
-    [PSCustomObject]@{ UserPrincipalName = $_; Error = $_.Exception.Message }
+  } -ThrottleLimit $ThrottleLimit |
+  ForEach-Object {
+    # Append each row to CSV and record progress
+    $_ | Select-Object UserPrincipalName,InboxItems,InboxOldestReceived,InboxNewestReceived,SentItemsItems,SentItemsOldestSent,SentItemsNewestSent |
+      Export-Csv -Path $OutputCsv -NoTypeInformation -Encoding UTF8 -Append
+    Add-Content -Path $ProgressFile -Value "$($_.UserPrincipalName),Written"
   }
-} -ThrottleLimit $ThrottleLimit
 
-Write-Log -Level INFO -Message "Writing CSV: $OutputCsv" -Context 'Output' -DebugMode:$DebugMode
-$results | Sort-Object UserPrincipalName | Export-Csv -Path $OutputCsv -NoTypeInformation -Encoding UTF8
-Write-Log -Level INFO -Message 'Done.' -Context 'Output' -DebugMode:$DebugMode
+Write-Log -Level INFO -Message 'Streaming complete.' -Context 'Output' -DebugMode:$DebugMode
