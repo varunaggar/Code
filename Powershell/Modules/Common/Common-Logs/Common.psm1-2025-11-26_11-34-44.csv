@@ -1,0 +1,3 @@
+Timestamp,Level,Context,Message
+"2025-11-26 11:34:44.891","INFO","Ensure-Modules","Checking required modules: Foo"
+"2025-11-26 11:34:44.895","INFO","Ensure-Modules","Local module search roots: /Users/varunaggarwal/Documents/Code/Powershell/Modules"

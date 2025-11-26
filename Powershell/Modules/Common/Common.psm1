@@ -88,12 +88,22 @@ function Ensure-Modules {
     [switch]$InstallMissing,
     [switch]$ScopeCurrentUser
   )
-  # Determine script root and local Modules folder
-  $scriptRoot = if ($PSCommandPath) { Split-Path -Parent $PSCommandPath } elseif ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
-  $localModulesRoot = Join-Path $scriptRoot 'Modules'
-  $hasLocalModules = Test-Path $localModulesRoot
+  # Determine probable local Modules search roots
+  $scriptRoot = if ($PSScriptRoot) { $PSScriptRoot } elseif ($PSCommandPath) { Split-Path -Parent $PSCommandPath } else { (Get-Location).Path }
+  $localSearchRoots = @()
+  $candidate1 = Join-Path $scriptRoot 'Modules'
+  if (Test-Path $candidate1) { $localSearchRoots += $candidate1 }
+  if ($PSCommandPath) {
+    $moduleDir = Split-Path -Parent $PSCommandPath
+    $maybeModules = Split-Path -Parent $moduleDir
+    if ((Split-Path -Leaf $maybeModules) -eq 'Modules' -and (Test-Path $maybeModules)) { $localSearchRoots += $maybeModules }
+  }
+  $cwdModules = Join-Path (Get-Location).Path 'Modules'
+  if (Test-Path $cwdModules) { $localSearchRoots += $cwdModules }
+  $localSearchRoots = @($localSearchRoots | Select-Object -Unique)
+
   Write-Log -Level INFO -Message "Checking required modules: $($ModuleNames -join ', ')" -Context 'Ensure-Modules'
-  Write-Log -Level INFO -Message "ScriptRoot: $scriptRoot | Local Modules folder present: $hasLocalModules" -Context 'Ensure-Modules'
+  Write-Log -Level INFO -Message "Local module search roots: $([string]::Join('; ', $localSearchRoots))" -Context 'Ensure-Modules'
 
   $missing = @()
   foreach ($name in $ModuleNames) {
@@ -105,49 +115,52 @@ function Ensure-Modules {
     }
     if ($available) {
       try {
-        Import-Module -Name $name -ErrorAction Stop
+        Import-Module -Name $name -Scope Global -ErrorAction Stop
         Write-Log -Level INFO -Message "Imported available module: $name" -Context 'Ensure-Modules'
       } catch {
         Write-Log -Level WARN -Message "Failed to import available module '$name': $($_.Exception.Message)" -Context 'Ensure-Modules'
         $missing += $name
       }
     } else {
-      # Try local Modules path if present (support .psd1/.psm1 or module folder)
-      if ($hasLocalModules) {
-        # First, look for manifest or module file named exactly like the module
-        $manifest = Get-ChildItem -Path $localModulesRoot -Recurse -File -Include "$name.psd1","$name.psm1" -ErrorAction SilentlyContinue | Select-Object -First 1
-        if (-not $manifest) {
-          # Next, look for a directory named like the module
-          $dirCandidate = Get-ChildItem -Path $localModulesRoot -Recurse -Directory -Filter $name -ErrorAction SilentlyContinue | Select-Object -First 1
-          if ($dirCandidate) {
-            # If directory, see if it contains a matching manifest/module file
-            $manifest = Get-ChildItem -Path $dirCandidate.FullName -File -Include "$name.psd1","$name.psm1" -ErrorAction SilentlyContinue | Select-Object -First 1
-            if (-not $manifest) { $manifest = $dirCandidate }
+      # Try local Modules paths if present (support .psd1/.psm1 or module folder)
+      if ($localSearchRoots.Count -gt 0) {
+        $imported = $false
+        foreach ($root in $localSearchRoots) {
+          # First, look for manifest or module file named exactly like the module
+          $manifest = Get-ChildItem -Path $root -Recurse -File -Include "$name.psd1","$name.psm1" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $manifest) {
+            # Next, look for a directory named like the module
+            $dirCandidate = Get-ChildItem -Path $root -Recurse -Directory -Filter $name -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($dirCandidate) {
+              # If directory, see if it contains a matching manifest/module file
+              $manifest = Get-ChildItem -Path $dirCandidate.FullName -File -Include "$name.psd1","$name.psm1" -ErrorAction SilentlyContinue | Select-Object -First 1
+              if (-not $manifest) { $manifest = $dirCandidate }
+            }
+          }
+          if ($manifest) {
+            try {
+              Import-Module $manifest.FullName -Scope Global -ErrorAction Stop
+              Write-Log -Level INFO -Message "Imported local module: $name from $($manifest.FullName)" -Context 'Ensure-Modules'
+              $imported = $true
+              break
+            } catch {
+              Write-Log -Level WARN -Message "Failed to import local module '$name' from $($manifest.FullName): $($_.Exception.Message)" -Context 'Ensure-Modules'
+            }
           }
         }
-
-        if ($manifest) {
-          try {
-            Import-Module $manifest.FullName -ErrorAction Stop
-            Write-Log -Level INFO -Message "Imported local module: $name from $($manifest.FullName)" -Context 'Ensure-Modules'
-            continue
-          } catch {
-            Write-Log -Level WARN -Message "Failed to import local module '$name' from $($manifest.FullName): $($_.Exception.Message)" -Context 'Ensure-Modules'
-          }
-        } else {
-          Write-Log -Level VERBOSE -Message "Local module file/folder not found under $localModulesRoot for '$name'" -Context 'Ensure-Modules'
-        }
+        if ($imported) { continue } else { Write-Log -Level VERBOSE -Message "Local module file/folder not found in any search root for '$name'" -Context 'Ensure-Modules' }
       }
       $missing += $name
     }
   }
 
-  if ($missing.Count -gt 0) {
+  $missingList = @($missing)
+  if ($missingList.Count -gt 0) {
     Write-Log -Level WARN -Message "Missing modules after import attempts: $($missing -join ', ')" -Context 'Ensure-Modules'
     if (-not $InstallMissing) {
       throw "Missing required modules: $($missing -join ', '). Set -InstallMissing to auto-install."
     }
-    foreach ($m in $missing) {
+    foreach ($m in $missingList) {
       $scope = if ($ScopeCurrentUser) { 'CurrentUser' } else { 'AllUsers' }
       try {
         if (-not (Get-Module -ListAvailable -Name PowerShellGet)) {
@@ -155,7 +168,7 @@ function Ensure-Modules {
         }
         Write-Log -Level INFO -Message "Installing module '$m' (Scope=$scope)" -Context 'Ensure-Modules'
         Install-Module -Name $m -Scope $scope -Force -ErrorAction Stop
-        Import-Module -Name $m -ErrorAction Stop
+        Import-Module -Name $m -Scope Global -ErrorAction Stop
         Write-Log -Level INFO -Message "Installed and imported: $m" -Context 'Ensure-Modules'
       } catch {
         Write-Log -Level ERROR -Message "Failed to install/import module '$m': $($_.Exception.Message)" -Context 'Ensure-Modules'

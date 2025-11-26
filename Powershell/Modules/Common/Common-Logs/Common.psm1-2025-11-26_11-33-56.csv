@@ -1,0 +1,4 @@
+Timestamp,Level,Context,Message
+"2025-11-26 11:33:56.813","INFO","Ensure-Modules","Checking required modules: Foo"
+"2025-11-26 11:33:56.816","INFO","Ensure-Modules","ScriptRoot: /Users/varunaggarwal/Documents/Code/Powershell/Modules/Common | Local Modules folder present: False"
+"2025-11-26 11:33:56.820","WARN","Ensure-Modules","Missing modules after import attempts: Foo"
