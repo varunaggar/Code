@@ -75,7 +75,8 @@ $defaultProps = @(
 
 $allProps = ($defaultProps + $AdditionalProperties) | Sort-Object -Unique
 
-$groups = Get-ADGroup -SearchBase $SearchBase -Filter "GroupCategory -eq 'Distribution'" -Properties $allProps
+ $groups = Get-ADGroup -SearchBase $SearchBase -Filter "GroupCategory -eq 'Distribution'" -Properties $allProps |
+   Where-Object { $_.Name -notmatch '(-mra|-mas|-mfc)$' }
 
 Write-LogInfo "Found $($groups.Count) distribution groups. Processing..."
 
