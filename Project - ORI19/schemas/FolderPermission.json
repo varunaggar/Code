@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FolderPermission",
+  "type": "object",
+  "required": ["id", "mailboxId", "folderId", "principalId", "accessRights", "createdUtc"],
+  "properties": {
+    "id": { "type": "string" },
+    "mailboxId": { "type": "string" },
+    "folderId": { "type": "string" },
+    "principalId": { "type": "string" },
+    "principalType": { "type": "string" },
+    "accessRights": { "type": "array", "items": { "type": "string" } },
+    "isInherited": { "type": "boolean" },
+    "createdUtc": { "type": "string", "format": "date-time" },
+    "modifiedUtc": { "type": "string", "format": "date-time" }
+  }
+}

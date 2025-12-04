@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SyncCheckpoint",
+  "type": "object",
+  "required": ["id", "mailboxId", "checkpointType", "value", "modifiedUtc"],
+  "properties": {
+    "id": { "type": "string" },
+    "mailboxId": { "type": "string" },
+    "checkpointType": { "type": "string" },
+    "value": { "type": "string" },
+    "modifiedUtc": { "type": "string", "format": "date-time" }
+  }
+}

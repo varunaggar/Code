@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Mailbox",
+  "type": "object",
+  "required": ["id", "mailboxId", "tenantId", "geo", "primarySmtpAddress", "createdUtc"],
+  "properties": {
+    "id": { "type": "string" },
+    "mailboxId": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" },
+    "tenantId": { "type": "string" },
+    "geo": { "type": "string" },
+    "primarySmtpAddress": { "type": "string", "format": "email" },
+    "userPrincipalName": { "type": "string" },
+    "proxyAddresses": { "type": "array", "items": { "type": "string" } },
+    "exchangeGuid": { "type": "string" },
+    "externalDirectoryObjectId": { "type": "string" },
+    "resolutionMethod": { "type": "string" },
+    "createdUtc": { "type": "string", "format": "date-time" },
+    "modifiedUtc": { "type": "string", "format": "date-time" }
+  }
+}

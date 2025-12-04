@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AuditLog",
+  "type": "object",
+  "required": ["id", "tenantId", "geo", "category", "createdUtc"],
+  "properties": {
+    "id": { "type": "string" },
+    "tenantId": { "type": "string" },
+    "geo": { "type": "string" },
+    "category": { "type": "string" },
+    "event": { "type": "object" },
+    "createdUtc": { "type": "string", "format": "date-time" }
+  }
+}

@@ -1,0 +1,4 @@
+primarySmtpAddress,userPrincipalName,exchangeGuid,externalDirectoryObjectId
+alice@example.com,alice@example.com,1f1d2e3f-4a5b-6c7d-8e9f-001122334455,11111111-2222-3333-4444-555555555555
+bob@example.com,bob@example.com,,66666666-7777-8888-9999-000000000000
+carol@example.com,carol@example.com,,, 
