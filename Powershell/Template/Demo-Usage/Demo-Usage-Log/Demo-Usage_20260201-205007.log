@@ -1,0 +1,9 @@
+[2026-02-01 20:50:07] [INFO] Logging started to: /Users/varunaggarwal/Documents/Code/Powershell/Template/Demo-Usage/Demo-Usage-Log/Demo-Usage_20260201-205007.log
+[2026-02-01 20:50:07] [SUCCESS] [Setup] Project structure setup completed.
+[2026-02-01 20:50:07] [INFO] [DepCheck] Setup complete. No config file found at /Users/varunaggarwal/Documents/Code/Powershell/Template/Demo-Usage/Demo-Usage-Dependencies/Demo-Usage-Config.xml (this is expected for a fresh setup).
+[2026-02-01 20:50:07] [INFO] [Demo] Starting Demo Script
+[2026-02-01 20:50:07] [INFO] [Setup] Using Input Path: /Users/varunaggarwal/Documents/Code/Powershell/Template/Demo-Usage/Demo-Usage-Input
+[2026-02-01 20:50:07] [INFO] [Demo] Creating dummy data...
+[2026-02-01 20:50:07] [WARN] [Data] Module 'ImportExcel' not found. Falling back to CSV export.
+[2026-02-01 20:50:07] [SUCCESS] [Data] Exported to CSV: /Users/varunaggarwal/Documents/Code/Powershell/Template/Demo-Usage/Demo-Usage-Output/Result.csv
+[2026-02-01 20:50:07] [SUCCESS] [Demo] Demo completed successfully. Output at: /Users/varunaggarwal/Documents/Code/Powershell/Template/Demo-Usage/Demo-Usage-Output/Result.xlsx

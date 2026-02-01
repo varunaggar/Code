@@ -1,0 +1,12 @@
+[2026-02-01 20:52:35] [INFO] Logging started to: /Users/varunaggarwal/Documents/Code/Powershell/Template/Demo-Usage/Demo-Usage-Log/Demo-Usage_20260201-205235.log
+[2026-02-01 20:52:35] [SUCCESS] [Setup] Project structure setup completed.
+[2026-02-01 20:52:35] [INFO] [DepCheck] Initializing module dependencies from: /Users/varunaggarwal/Documents/Code/Powershell/Template/Custom-Config.xml
+[2026-02-01 20:52:35] [INFO] [DepCheck] Loading Module: CustomLogger...
+[2026-02-01 20:52:35] [INFO] [DepCheck] Importing from path: ./TestModule/CustomLogger.psm1
+[2026-02-01 20:52:35] [SUCCESS] [DepCheck] Successfully loaded module.
+[2026-02-01 20:52:35] [INFO] [Demo] Starting Demo Script
+[2026-02-01 20:52:35] [INFO] [Setup] Using Input Path: /Users/varunaggarwal/Documents/Code/Powershell/Template/Demo-Usage/Demo-Usage-Input
+[2026-02-01 20:52:35] [INFO] [Demo] Creating dummy data...
+[2026-02-01 20:52:35] [WARN] [Data] Module 'ImportExcel' not found. Falling back to CSV export.
+[2026-02-01 20:52:35] [SUCCESS] [Data] Exported to CSV: /Users/varunaggarwal/Documents/Code/Powershell/Template/Demo-Usage/Demo-Usage-Output/Result.csv
+[2026-02-01 20:52:35] [SUCCESS] [Demo] Demo completed successfully. Output at: /Users/varunaggarwal/Documents/Code/Powershell/Template/Demo-Usage/Demo-Usage-Output/Result.xlsx

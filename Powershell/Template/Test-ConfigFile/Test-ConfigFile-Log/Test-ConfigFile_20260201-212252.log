@@ -1,0 +1,5 @@
+[2026-02-01 21:22:52] [INFO] Logging started to: /Users/varunaggarwal/Documents/Code/Powershell/Template/Test-ConfigFile/Test-ConfigFile-Log/Test-ConfigFile_20260201-212252.log
+[2026-02-01 21:22:52] [SUCCESS] [Setup] Project structure setup completed.
+[2026-02-01 21:22:52] [INFO] [DepCheck] Initializing module dependencies from: /Users/varunaggarwal/Documents/Code/Powershell/Template/Custom-Config.xml
+[2026-02-01 21:22:52] [INFO] [DepCheck] Loading Module: ImportExcel...
+[2026-02-01 21:22:52] [ERROR] [DepCheck] CRITICAL: Failed to load required module. Error: The specified module 'ImportExcel' was not loaded because no valid module file was found in any module directory.

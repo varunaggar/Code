@@ -1,0 +1,7 @@
+[2026-02-01 20:48:48] [INFO] Logging started to: /Users/varunaggarwal/Documents/Code/Powershell/Template/Test-ConfigFile/Test-ConfigFile-Log/Test-ConfigFile_20260201-204848.log
+[2026-02-01 20:48:48] [SUCCESS] [Setup] Project structure setup completed.
+[2026-02-01 20:48:48] [INFO] [DepCheck] Initializing module dependencies from: /Users/varunaggarwal/Documents/Code/Powershell/Template/Custom-Config.xml
+[2026-02-01 20:48:48] [INFO] [DepCheck] Loading Module: CustomLogger...
+[2026-02-01 20:48:48] [INFO] [DepCheck] Importing from path: /Users/varunaggarwal/Documents/Code/Powershell/Template/./TestModule/CustomLogger.psm1
+[2026-02-01 20:48:48] [SUCCESS] [DepCheck] Successfully loaded module.
+[2026-02-01 20:48:48] [SUCCESS] [Test] Test completed. Checked config at: /Users/varunaggarwal/Documents/Code/Powershell/Template/Custom-Config.xml

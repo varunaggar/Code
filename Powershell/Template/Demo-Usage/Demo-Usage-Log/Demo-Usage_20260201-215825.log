@@ -1,0 +1,23 @@
+[2026-02-01 21:58:25] [INFO] Logging started to: /Users/varunaggarwal/Documents/Code/Powershell/Template/Demo-Usage/Demo-Usage-Log/Demo-Usage_20260201-215825.log
+[2026-02-01 21:58:25] [SUCCESS] [Setup] Project structure setup completed.
+[2026-02-01 21:58:25] [INFO] [DepCheck] Initializing module dependencies from: /Users/varunaggarwal/Documents/Code/Powershell/Template/Custom-Config.xml
+[2026-02-01 21:58:25] [WARN] [DepCheck] No modules definition found in config XML.
+[2026-02-01 21:58:25] [INFO] [Demo] Starting Demo Script
+[2026-02-01 21:58:25] [INFO] [Setup] Using Input Path: /Users/varunaggarwal/Documents/Code/Powershell/Template/Demo-Usage/Demo-Usage-Input
+[2026-02-01 21:58:25] [INFO] [Demo] Attempting Service Connections (Check 'Custom-Config.xml' to enable specific services)...
+[2026-02-01 21:58:25] [INFO] [Connect] Connecting to services defined in: /Users/varunaggarwal/Documents/Code/Powershell/Template/Custom-Config.xml
+[2026-02-01 21:58:25] [INFO] [Connect] Skipping disabled service: ExchangeOnline
+[2026-02-01 21:58:25] [INFO] [Connect] Skipping disabled service: ExchangeOnline
+[2026-02-01 21:58:25] [INFO] [Connect] Skipping disabled service: ExchangeOnline
+[2026-02-01 21:58:25] [INFO] [Connect] Skipping disabled service: ExchangeOnline
+[2026-02-01 21:58:25] [INFO] [Connect] Skipping disabled service: Graph
+[2026-02-01 21:58:25] [INFO] [Connect] Skipping disabled service: Graph
+[2026-02-01 21:58:25] [INFO] [Connect] Skipping disabled service: Graph
+[2026-02-01 21:58:25] [INFO] [Connect] Skipping disabled service: Graph
+[2026-02-01 21:58:25] [INFO] [Connect] Skipping disabled service: Az
+[2026-02-01 21:58:25] [INFO] [Connect] Skipping disabled service: Az
+[2026-02-01 21:58:25] [INFO] [Connect] Skipping disabled service: Az
+[2026-02-01 21:58:25] [INFO] [Demo] Creating dummy data...
+[2026-02-01 21:58:25] [WARN] [Data] Module 'ImportExcel' not found. Falling back to CSV export.
+[2026-02-01 21:58:25] [SUCCESS] [Data] Exported to CSV: /Users/varunaggarwal/Documents/Code/Powershell/Template/Demo-Usage/Demo-Usage-Output/Result.csv
+[2026-02-01 21:58:25] [SUCCESS] [Demo] Demo completed successfully. Output at: /Users/varunaggarwal/Documents/Code/Powershell/Template/Demo-Usage/Demo-Usage-Output/Result.xlsx

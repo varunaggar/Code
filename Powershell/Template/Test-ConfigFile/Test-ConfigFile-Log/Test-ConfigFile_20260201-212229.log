@@ -1,0 +1,4 @@
+[2026-02-01 21:22:29] [INFO] Logging started to: /Users/varunaggarwal/Documents/Code/Powershell/Template/Test-ConfigFile/Test-ConfigFile-Log/Test-ConfigFile_20260201-212229.log
+[2026-02-01 21:22:29] [SUCCESS] [Setup] Project structure setup completed.
+[2026-02-01 21:22:29] [INFO] [DepCheck] Initializing module dependencies from: /Users/varunaggarwal/Documents/Code/Powershell/Template/Custom-Config.xml
+[2026-02-01 21:22:29] [ERROR] [DepCheck] Failed to parse XML config: Cannot convert value "System.Object[]" to type "System.Xml.XmlDocument". Error: "An XML comment cannot contain '--', and '-' cannot be the last character. Line 34, position 68."
