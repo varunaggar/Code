@@ -110,6 +110,11 @@ function Connect-Service {
                             }
                             Default { throw "Unsupported AuthMethod for Graph: $authMethod" }
                         }
+                        
+                        # Validate Connection
+                        if (-not (Get-MgContext)) { 
+                            throw "Critical: 'Get-MgContext' returned null. Connection failed silently." 
+                        }
                     }
 
                     # =========================================================================================
@@ -156,6 +161,12 @@ function Connect-Service {
                             }
                             Default { throw "Unsupported AuthMethod for ExchangeOnline: $authMethod" }
                         }
+                        
+                        # Validate Connection
+                        # NOTE: Using Get-ConnectionInformation implies EXO V3 module. For V2 compatibility, check Get-PSSession.
+                        if (-not (Get-ConnectionInformation -ErrorAction SilentlyContinue)) {
+                            throw "Critical: 'Get-ConnectionInformation' returned empty. Exchange connection failed silently."
+                        }
                     }
 
                     # =========================================================================================
@@ -199,6 +210,11 @@ function Connect-Service {
                                 Connect-AzAccount @params -ErrorAction Stop
                             }
                             Default { throw "Unsupported AuthMethod for Az: $authMethod" }
+                        }
+                        
+                        # Validate Connection
+                        if (-not (Get-AzContext)) {
+                            throw "Critical: 'Get-AzContext' returned null. Azure connection failed silently."
                         }
                     }
 
