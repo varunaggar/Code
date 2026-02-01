@@ -141,7 +141,7 @@ function Get-GraphMailboxFolderPermission {
                         Mailbox         = $mailbox
                         Folder          = $folder
                         PermissionId    = $perm.id
-                        GranteeType     = $perm.grantedTo?.user?.@odata.type
+                        GranteeType     = $perm.grantedTo?.user?.'@odata.type'
                         Grantee         = $perm.grantedTo?.user?.displayName
                         GranteeUPN      = $perm.grantedTo?.user?.emailAddress
                         Roles           = ($perm.roles -join ',')

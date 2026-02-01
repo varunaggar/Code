@@ -24,7 +24,7 @@
     PowerShellVersion = '7.0'
 
     # Functions to export from this module, for best performance, do not use wildcards
-    FunctionsToExport = @('Start-FastLog', 'Write-FastLog', 'Export-SimpleExcel', 'Merge-CsvFolder', 'Initialize-ModuleDependencies', 'Connect-Service', 'Invoke-GraphHuntingQuery')
+    FunctionsToExport = @('Start-FastLog', 'Write-FastLog', 'Export-SimpleExcel', 'Merge-CsvFolder', 'Initialize-ModuleDependencies', 'Connect-Service', 'Invoke-GraphHuntingQuery', 'Get-SplunkMailboxPermissionEvents')
 
     # Cmdlets to export from this module
     CmdletsToExport = @()
