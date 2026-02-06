@@ -218,7 +218,7 @@ function Get-MailboxFolderPermissionsAllFolders {
                 $outFile = Join-Path $tempFolder ("$($mbx -replace '[^a-zA-Z0-9@._-]', '_').csv")
 
                 foreach ($f in $folders) {
-                    $identity = "$mbx:$($f.Path)"
+                    $identity = "$mbx $($f.Path)"
                     try {
                         $perms = Invoke-AdminApiPaged -TenantId $tenantId -BaseUrl $baseUrl -AccessToken $adminToken -AnchorMailbox $anchor -Identity $identity
 
@@ -239,12 +239,12 @@ function Get-MailboxFolderPermissionsAllFolders {
                         }
                     }
                     catch {
-                        Write-FastLog -Message "Failed permissions for $identity: $($_.Exception.Message)" -Level 'WARN' -Context 'MailboxPerms'
+                        Write-FastLog -Message "Failed permissions for $identity $($_.Exception.Message)" -Level 'WARN' -Context 'MailboxPerms'
                     }
                 }
             }
             catch {
-                Write-FastLog -Message "Failed mailbox $mbx: $($_.Exception.Message)" -Level 'ERROR' -Context 'MailboxPerms'
+                Write-FastLog -Message "Failed mailbox $mbx $($_.Exception.Message)" -Level 'ERROR' -Context 'MailboxPerms'
             }
         } -ThrottleLimit $ThrottleLimit -ArgumentList $tenantId, $clientId, $clientSecret, $tokenEndpoint, $BaseUrl, $IncludeHiddenFolders, $tempFolder, $commonModulePath
 
