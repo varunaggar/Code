@@ -1,0 +1,19 @@
+# Local development settings — contains secrets, never commit
+local.settings.json
+
+# Azure Functions Core Tools artefacts
+bin/
+obj/
+
+# PowerShell module cache
+managed_dependencies/
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Secrets directory if used locally
+.secrets/
+*.secret
