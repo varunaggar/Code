@@ -13,18 +13,33 @@ final class ClickerViewModel: ObservableObject {
     private let clicker = AutoClicker()
     private let hotkeys = HotKeyManager()
     private var startAfterClickMonitor: Any?
+    private var accessibilityPollTimer: Timer?
 
     init() {
         hotkeys.onStart = { [weak self] in self?.start() }
         hotkeys.onStop = { [weak self] in self?.stop() }
         hotkeys.registerDefaults()
+        startAccessibilityPolling()
+    }
+
+    private func startAccessibilityPolling() {
+        guard !AccessibilityHelper.isTrusted() else { return }
+        accessibilityPollTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] timer in
+            guard let self = self else { timer.invalidate(); return }
+            let trusted = AccessibilityHelper.isTrusted()
+            DispatchQueue.main.async {
+                self.isAccessibilityGranted = trusted
+            }
+            if trusted {
+                timer.invalidate()
+                self.accessibilityPollTimer = nil
+            }
+        }
     }
 
     func promptAccessibility() {
         AccessibilityHelper.promptForTrust()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.isAccessibilityGranted = AccessibilityHelper.isTrusted()
-        }
+        startAccessibilityPolling()
     }
 
     func start() {
