@@ -1,0 +1,217 @@
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.arch{font-family:var(--font-sans);padding:16px 0;display:flex;flex-direction:column;gap:0}
+.tier{display:flex;align-items:stretch;gap:0}
+.tier-label{writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;font-weight:500;text-align:center;padding:6px 5px;min-width:28px;border-radius:var(--border-radius-md);display:flex;align-items:center;justify-content:center;letter-spacing:.03em}
+.tier-components{flex:1;display:flex;gap:8px;padding:0 8px}
+.comp{flex:1;border-radius:var(--border-radius-md);border:0.5px solid;padding:7px 10px;cursor:pointer;transition:filter .15s;display:flex;flex-direction:column;gap:2px}
+.comp:hover{filter:brightness(0.93)}
+.comp-title{font-size:12px;font-weight:500;line-height:1.3}
+.comp-sub{font-size:11px;opacity:.75;line-height:1.3}
+.arrow-row{display:flex;align-items:center;justify-content:center;height:22px;padding-left:28px}
+.arrow-row svg{height:22px;width:32px}
+.legend{display:flex;flex-wrap:wrap;gap:8px;padding:12px 0 0 36px;margin-top:4px;border-top:0.5px solid var(--color-border-tertiary)}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary)}
+.leg-dot{width:8px;height:8px;border-radius:50%}
+
+.t-m365 .tier-label{background:#EEEDFE;color:#3C3489}
+.t-m365 .comp{background:#EEEDFE;border-color:#AFA9EC;color:#26215C}
+
+.t-ingest .tier-label{background:#E6F1FB;color:#0C447C}
+.t-ingest .comp{background:#E6F1FB;border-color:#85B7EB;color:#042C53}
+
+.t-msg .tier-label{background:#FAEEDA;color:#633806}
+.t-msg .comp{background:#FAEEDA;border-color:#EF9F27;color:#412402}
+
+.t-compute .tier-label{background:#E1F5EE;color:#085041}
+.t-compute .comp{background:#E1F5EE;border-color:#5DCAA5;color:#04342C}
+
+.t-data .tier-label{background:#EAF3DE;color:#27500A}
+.t-data .comp{background:#EAF3DE;border-color:#97C459;color:#173404}
+
+.t-monitor .tier-label{background:#F1EFE8;color:#444441}
+.t-monitor .comp{background:#F1EFE8;border-color:#B4B2A9;color:#2C2C2A}
+
+.t-report .tier-label{background:#FBEAF0;color:#72243E}
+.t-report .comp{background:#FBEAF0;border-color:#ED93B1;color:#4B1528}
+
+.t-sec .tier-label{background:#FAECE7;color:#712B13}
+.t-sec .comp{background:#FAECE7;border-color:#F0997B;color:#4A1B0C}
+
+@media (prefers-color-scheme:dark){
+.t-m365 .tier-label{background:#26215C;color:#CECBF6}
+.t-m365 .comp{background:#26215C;border-color:#534AB7;color:#EEEDFE}
+.t-ingest .tier-label{background:#042C53;color:#B5D4F4}
+.t-ingest .comp{background:#042C53;border-color:#185FA5;color:#E6F1FB}
+.t-msg .tier-label{background:#412402;color:#FAC775}
+.t-msg .comp{background:#412402;border-color:#BA7517;color:#FAEEDA}
+.t-compute .tier-label{background:#04342C;color:#9FE1CB}
+.t-compute .comp{background:#04342C;border-color:#0F6E56;color:#E1F5EE}
+.t-data .tier-label{background:#173404;color:#C0DD97}
+.t-data .comp{background:#173404;border-color:#3B6D11;color:#EAF3DE}
+.t-monitor .tier-label{background:#2C2C2A;color:#D3D1C7}
+.t-monitor .comp{background:#2C2C2A;border-color:#5F5E5A;color:#F1EFE8}
+.t-report .tier-label{background:#4B1528;color:#F4C0D1}
+.t-report .comp{background:#4B1528;border-color:#993556;color:#FBEAF0}
+.t-sec .tier-label{background:#4A1B0C;color:#F5C4B3}
+.t-sec .comp{background:#4A1B0C;border-color:#993C1D;color:#FAECE7}
+}
+</style>
+<h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Azure M365 Permissions Database Architecture showing 8 tiers from M365 source through ingestion, messaging, compute, data, monitoring, reporting, and security layers</h2>
+
+<div class="arch">
+
+<div class="tier t-m365">
+  <div class="tier-label">M365</div>
+  <div class="tier-components">
+    <div class="comp" onclick="sendPrompt('Tell me more about the M365 Exchange Online source layer and what permissions data we can collect')">
+      <div class="comp-title">Exchange Online — 40K mailboxes</div>
+      <div class="comp-sub">Full access · Send-As · Send-on-Behalf · Delegate · Folder permissions</div>
+    </div>
+  </div>
+</div>
+
+<div class="arrow-row"><svg viewBox="0 0 32 22" fill="none"><line x1="16" y1="0" x2="16" y2="16" stroke="var(--color-border-primary)" stroke-width="1.5"/><path d="M10 12 L16 19 L22 12" stroke="var(--color-border-primary)" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+<div class="tier t-ingest">
+  <div class="tier-label">Ingest</div>
+  <div class="tier-components">
+    <div class="comp" onclick="sendPrompt('Explain how Microsoft Graph API change notifications detect mailbox permission changes in real time')">
+      <div class="comp-title">Graph API webhooks</div>
+      <div class="comp-sub">Real-time change notifications</div>
+    </div>
+    <div class="comp" onclick="sendPrompt('How do the Exchange Online PowerShell runbooks do full and delta sync of mailbox permissions?')">
+      <div class="comp-title">EXO PowerShell module</div>
+      <div class="comp-sub">Full + delta sync runbooks</div>
+    </div>
+    <div class="comp" onclick="sendPrompt('How does M365 Unified Audit Log streaming via Event Hub work for permission change detection?')">
+      <div class="comp-title">Unified Audit Log</div>
+      <div class="comp-sub">Streamed via Event Hub</div>
+    </div>
+  </div>
+</div>
+
+<div class="arrow-row"><svg viewBox="0 0 32 22" fill="none"><line x1="16" y1="0" x2="16" y2="16" stroke="var(--color-border-primary)" stroke-width="1.5"/><path d="M10 12 L16 19 L22 12" stroke="var(--color-border-primary)" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+<div class="tier t-msg">
+  <div class="tier-label">Queue</div>
+  <div class="tier-components">
+    <div class="comp" onclick="sendPrompt('What is the role of Azure Event Hub in this architecture for M365 audit log streaming?')">
+      <div class="comp-title">Azure Event Hub</div>
+      <div class="comp-sub">Audit log stream ingestion</div>
+    </div>
+    <div class="comp" onclick="sendPrompt('How does Azure Service Bus queue permission sync jobs reliably in this architecture?')">
+      <div class="comp-title">Azure Service Bus</div>
+      <div class="comp-sub">Reliable permission sync queue</div>
+    </div>
+  </div>
+</div>
+
+<div class="arrow-row"><svg viewBox="0 0 32 22" fill="none"><line x1="16" y1="0" x2="16" y2="16" stroke="var(--color-border-primary)" stroke-width="1.5"/><path d="M10 12 L16 19 L22 12" stroke="var(--color-border-primary)" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+<div class="tier t-compute">
+  <div class="tier-label">Compute</div>
+  <div class="tier-components">
+    <div class="comp" onclick="sendPrompt('What PowerShell runbooks should be created in Azure Automation for the mailbox permissions sync solution?')">
+      <div class="comp-title">Azure Automation</div>
+      <div class="comp-sub">PowerShell runbooks · Schedules</div>
+    </div>
+    <div class="comp" onclick="sendPrompt('What Azure Functions are needed to process Graph API notifications and Service Bus messages in this solution?')">
+      <div class="comp-title">Azure Functions</div>
+      <div class="comp-sub">Event-driven processing</div>
+    </div>
+  </div>
+</div>
+
+<div class="arrow-row"><svg viewBox="0 0 32 22" fill="none"><line x1="16" y1="0" x2="16" y2="16" stroke="var(--color-border-primary)" stroke-width="1.5"/><path d="M10 12 L16 19 L22 12" stroke="var(--color-border-primary)" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+<div class="tier t-data">
+  <div class="tier-label">Data</div>
+  <div class="tier-components">
+    <div class="comp" onclick="sendPrompt('What is the Azure SQL Hyperscale database schema for storing all 5 types of Exchange Online mailbox permissions?')">
+      <div class="comp-title">Azure SQL Hyperscale</div>
+      <div class="comp-sub">Permissions store · HA + auto-scale</div>
+    </div>
+    <div class="comp" onclick="sendPrompt('How should Azure Cache for Redis be used to cache hot-path mailbox permission queries?')">
+      <div class="comp-title">Azure Cache for Redis</div>
+      <div class="comp-sub">Hot-path query caching</div>
+    </div>
+    <div class="comp" onclick="sendPrompt('What audit trail and historical data should be stored in Azure Blob Storage for this solution?')">
+      <div class="comp-title">Azure Blob Storage</div>
+      <div class="comp-sub">Audit trail · Sync history</div>
+    </div>
+  </div>
+</div>
+
+<div class="arrow-row"><svg viewBox="0 0 32 22" fill="none"><line x1="16" y1="0" x2="16" y2="16" stroke="var(--color-border-primary)" stroke-width="1.5"/><path d="M10 12 L16 19 L22 12" stroke="var(--color-border-primary)" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+<div class="tier t-monitor">
+  <div class="tier-label">Monitor</div>
+  <div class="tier-components">
+    <div class="comp" onclick="sendPrompt('What Azure Monitor metrics and alerts should be configured for end-to-end monitoring of the mailbox permissions sync solution?')">
+      <div class="comp-title">Azure Monitor</div>
+      <div class="comp-sub">Metrics · Alerts · Dashboards</div>
+    </div>
+    <div class="comp" onclick="sendPrompt('What Log Analytics workspace queries and workbooks should be built for monitoring sync health and data freshness?')">
+      <div class="comp-title">Log Analytics Workspace</div>
+      <div class="comp-sub">KQL queries · Sync health</div>
+    </div>
+    <div class="comp" onclick="sendPrompt('How should Application Insights be used to monitor the Azure Functions and runbook telemetry in this solution?')">
+      <div class="comp-title">Application Insights</div>
+      <div class="comp-sub">Runbook + function telemetry</div>
+    </div>
+  </div>
+</div>
+
+<div class="arrow-row"><svg viewBox="0 0 32 22" fill="none"><line x1="16" y1="0" x2="16" y2="16" stroke="var(--color-border-primary)" stroke-width="1.5"/><path d="M10 12 L16 19 L22 12" stroke="var(--color-border-primary)" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+<div class="tier t-report">
+  <div class="tier-label">Report</div>
+  <div class="tier-components">
+    <div class="comp" onclick="sendPrompt('What Power BI reports and datasets should be built for business users to query mailbox permissions?')">
+      <div class="comp-title">Power BI</div>
+      <div class="comp-sub">Self-service reports for business users</div>
+    </div>
+    <div class="comp" onclick="sendPrompt('How should Azure API Management expose a REST API for programmatic permission queries?')">
+      <div class="comp-title">Azure API Management</div>
+      <div class="comp-sub">REST API for integrations</div>
+    </div>
+    <div class="comp" onclick="sendPrompt('What should the Azure Static Web App reporting portal look like for business users querying mailbox permissions?')">
+      <div class="comp-title">Azure Static Web App</div>
+      <div class="comp-sub">Self-service query portal</div>
+    </div>
+  </div>
+</div>
+
+<div class="arrow-row"><svg viewBox="0 0 32 22" fill="none"><line x1="16" y1="0" x2="16" y2="16" stroke="var(--color-border-secondary)" stroke-width="1" stroke-dasharray="3 2"/></svg></div>
+
+<div class="tier t-sec">
+  <div class="tier-label">Security</div>
+  <div class="tier-components">
+    <div class="comp" onclick="sendPrompt('How should Azure Key Vault be used to manage secrets, certificates and credentials in this solution?')">
+      <div class="comp-title">Azure Key Vault</div>
+      <div class="comp-sub">Secrets · Certs · App registrations</div>
+    </div>
+    <div class="comp" onclick="sendPrompt('How should Managed Identity be configured across all Azure resources in this solution?')">
+      <div class="comp-title">Managed Identity + RBAC</div>
+      <div class="comp-sub">Zero-credential auth · Least privilege</div>
+    </div>
+    <div class="comp" onclick="sendPrompt('What Azure Private Endpoints and networking should be configured for this solution?')">
+      <div class="comp-title">Private Endpoints + VNet</div>
+      <div class="comp-sub">Network isolation for SQL + Redis</div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="leg-item"><div class="leg-dot" style="background:#7F77DD"></div>M365 Source</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#378ADD"></div>Ingestion</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#EF9F27"></div>Messaging</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#1D9E75"></div>Compute</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#639922"></div>Data store</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#888780"></div>Monitoring</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#D4537E"></div>Reporting</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#D85A30"></div>Security</div>
+</div>
+</div>
+<p style="font-size:11px;color:var(--color-text-tertiary);text-align:center;margin-top:8px">Click any component to deep-dive into that layer</p>

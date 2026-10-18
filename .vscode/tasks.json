@@ -23,6 +23,16 @@
                 "clear": false
             },
             "problemMatcher": []
+        },
+        {
+            "type": "func",
+            "label": "func: host start",
+            "command": "host start",
+            "problemMatcher": "$func-powershell-watch",
+            "isBackground": true,
+            "options": {
+                "cwd": "${workspaceFolder}/ORI19-Final/m365-perms-sync 2"
+            }
         }
     ]
 }

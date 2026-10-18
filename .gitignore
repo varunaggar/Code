@@ -2,7 +2,6 @@
 .DS_Store
 
 # Editors
-.vscode/
 
 # Xcode
 **/DerivedData/
@@ -39,3 +38,5 @@ Powershell/psvariables.ps1
 **/*.tgz
 **/*.pkg
 **/*.dmg
+
+**/.claude/settings.local.json
